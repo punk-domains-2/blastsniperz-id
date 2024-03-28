@@ -10,65 +10,84 @@
       </p>
     </div>
 
-    <div class="d-flex justify-content-center domain-input-container mb-3 mt-5">
-      <div class="input-group domain-input input-group-lg input-sizing">
-        <input
-          v-model="chosenDomainName" 
-          placeholder="enter name"
-          type="text" 
-          class="form-control text-end border-2 border-end-0 border-light"
-          aria-label="Text input with dropdown button"
-        >
-
-        <span class="input-group-text tld-addon border-2 border-light">
-          <span v-if="loading" class="spinner-border spinner-border-sm mx-1" role="status" aria-hidden="true"></span>
-          <span>{{getTldName}}</span>
-        </span>
+    <div v-if="!isEligible">
+      <div class="d-flex justify-content-center domain-input-container mb-3 mt-5">
+        <div class="mb-3">
+          <label for="nftIdInputField" class="form-label">Enter your BlastSniperz NFT ID</label>
+          <input 
+            type="number"
+            pattern="[0-9]*" 
+            step="1" 
+            class="form-control form-control-lg" 
+            id="nftIdInputField" 
+            v-model="nftId"
+            placeholder="Enter your NFT ID"
+          />
+        </div>
       </div>
+
+      <button 
+        class="btn btn-secondary btn-lg mt-1 buy-button" 
+        :disabled="!nftId || waitingEligibility"
+        @click="checkEligibility"
+      >
+        <span v-if="waitingEligibility" class="spinner-border spinner-border-sm mx-1" role="status" aria-hidden="true"></span>
+        <span>Check eligibility</span>
+      </button>
     </div>
 
-    <p class="error">
-      <small v-if="buyNotValid(chosenDomainName).invalid">
-        <em>{{ buyNotValid(chosenDomainName).message }}</em>
-      </small>
-    </p>
+    <div v-if="isEligible">
+      <div class="d-flex justify-content-center domain-input-container mb-3 mt-5">
+        <div class="input-group domain-input input-group-lg input-sizing">
+          <input
+            v-model="chosenDomainName" 
+            placeholder="enter name"
+            type="text" 
+            class="form-control text-end border-2 border-end-0 border-light"
+            aria-label="Text input with dropdown button"
+          >
 
-    <div class="text-align-header">
-      <p class="mt-5 price-text">
-          5+ char domain price: FREE
+          <span class="input-group-text tld-addon border-2 border-light">
+            <span v-if="loading" class="spinner-border spinner-border-sm mx-1" role="status" aria-hidden="true"></span>
+            <span>{{getTldName}}</span>
+          </span>
+        </div>
+      </div>
+
+      <p class="error">
+        <small v-if="buyNotValid(chosenDomainName).invalid">
+          <em>{{ buyNotValid(chosenDomainName).message }}</em>
+        </small>
       </p>
+
+      <div class="text-align-header">
+        <p class="mt-5 price-text">
+            5+ char domain price: FREE
+        </p>
+      </div>
+
+      <!-- Minter contract paused -->
+      <button v-if="isActivated && getMinterPaused && !getMinterLoadingData" class="btn btn-secondary btn-lg mt-3 buy-button" :disabled="true">
+        <span v-if="getMinterPaused">Minting paused</span>
+      </button>
+
+      <!-- Minter contract loading data -->
+      <button v-if="isActivated && isNetworkSupported && getMinterLoadingData" class="btn btn-secondary btn-lg mt-3 buy-button" :disabled="true">
+        <span class="spinner-border spinner-border-sm mx-1" role="status" aria-hidden="true"></span>
+        <span>Loading data</span>
+      </button>
+
+      <!-- Mint free domain -->
+      <button 
+        v-if="isActivated && isNetworkSupported && getCanUserBuy && isEligible && !getMinterPaused && !getMinterLoadingData" 
+        class="btn btn-secondary btn-lg mt-3 buy-button" 
+        @click="mintFreeDomain" 
+        :disabled="waiting || buyNotValid(chosenDomainName).invalid || !isCorrectLength"
+      >
+        <span v-if="waiting" class="spinner-border spinner-border-sm mx-1" role="status" aria-hidden="true"></span>
+        <span>Mint free domain</span>
+      </button>
     </div>
-
-    <!-- Minter contract paused -->
-    <button v-if="isActivated && getMinterPaused && !getMinterLoadingData" class="btn btn-secondary btn-lg mt-3 buy-button" :disabled="true">
-      <span v-if="getMinterPaused">Minting paused</span>
-    </button>
-
-    <!-- Minter contract loading data -->
-    <button v-if="isActivated && isNetworkSupported && getMinterLoadingData" class="btn btn-secondary btn-lg mt-3 buy-button" :disabled="true">
-      <span class="spinner-border spinner-border-sm mx-1" role="status" aria-hidden="true"></span>
-      <span>Loading data</span>
-    </button>
-
-    <!-- Not eligible -->
-    <button 
-      v-if="isActivated && isNetworkSupported && !getMinterPaused && !isEligible && !getMinterLoadingData" 
-      class="btn btn-secondary btn-lg mt-3 buy-button" 
-      disabled="true"
-    >
-      <span>Not eligible</span>
-    </button>
-
-    <!-- Mint free domain -->
-    <button 
-      v-if="isActivated && isNetworkSupported && getCanUserBuy && isEligible && !getMinterPaused && !getMinterLoadingData" 
-      class="btn btn-secondary btn-lg mt-3 buy-button" 
-      @click="mintFreeDomain" 
-      :disabled="waiting || buyNotValid(chosenDomainName).invalid || !isCorrectLength"
-    >
-      <span v-if="waiting" class="spinner-border spinner-border-sm mx-1" role="status" aria-hidden="true"></span>
-      <span>Mint free domain</span>
-    </button>
 
     <!-- Connect Wallet -->
     <button v-if="!isActivated" class="btn btn-secondary btn-lg mt-3 btn-Disconnected" data-bs-toggle="modal" data-bs-target="#connectModal">Connect wallet</button>
@@ -99,8 +118,10 @@ export default {
       chosenAllowance: null,
       isEligible: false,
       loading: false, // loading data
+      minterContract: null,
+      nftId: null,
       waiting: false, // waiting for TX to complete
-      minterContract: null
+      waitingEligibility: false, // waiting for TX to complete
     }
   },
 
@@ -116,7 +137,7 @@ export default {
     isCorrectLength() {
       // domain must be 4 chars or longer
       if (this.chosenDomainName) {
-        return this.chosenDomainName.length >= 4;
+        return this.chosenDomainName.length >= 5;
       }
 
       return false;
@@ -139,7 +160,13 @@ export default {
 
     async checkEligibility() {
       // check if user is eligible for a free domain
-      this.loading = true;
+      this.waitingEligibility = true;
+
+      if (!this.nftId || this.nftId > 1427 || this.nftId < 1) {
+        this.toast("Please enter a valid NFT ID.", {type: TYPE.ERROR});
+        this.waitingEligibility = false;
+        return;
+      }
 
       const minterInterface = new ethers.utils.Interface([
         "function freeMintEligibility(uint256 nftId_, address user_) external view returns(bool alreadyMinted_, bool isOwner_)"
@@ -147,11 +174,19 @@ export default {
 
       const minterContract = new ethers.Contract(this.getMinterAddress, minterInterface, this.signer);
       
-      const hasAlreadyClaimed = await minterContract.hasClaimedFreeDomain(this.address);
+      const eligibilityData = await minterContract.freeMintEligibility(this.nftId, this.address);
 
-      this.isEligible = isNftHolder && !hasAlreadyClaimed;
+      if (eligibilityData.isOwner_ && !eligibilityData.alreadyMinted_) {
+        this.isEligible = true;
+      } else if (eligibilityData.alreadyMinted_) {
+        this.isEligible = false;
+        this.toast("NFT with ID " + this.nftId + " has already been used to mint a free domain.", {type: TYPE.ERROR});
+      } else if (!eligibilityData.isOwner_) {
+        this.isEligible = false;
+        this.toast("NFT with ID " + this.nftId + " does not belong to you.", {type: TYPE.ERROR});
+      }
 
-      this.loading = false;
+      this.waitingEligibility = false;
     },
 
     async mintFreeDomain() {
@@ -169,14 +204,15 @@ export default {
 
       // wrapper contract (with signer)
       const wrapperIntfc = new ethers.utils.Interface([
-        "function nftFreeMint(string memory _domainName, address _domainHolder) external nonReentrant returns(uint256)"
+        "function holderFreeMint(string memory _domainName, address _domainHolder, uint256 _nftId) external nonReentrant returns(uint256)"
       ]);
       const minterContractSigner = new ethers.Contract(this.getMinterAddress, wrapperIntfc, this.signer);
 
       try {
-        const tx = await minterContractSigner.nftFreeMint(
+        const tx = await minterContractSigner.holderFreeMint(
           this.domainLowerCase,
-          this.address
+          this.address,
+          this.nftId
         );
 
         const toastWait = this.toast(
@@ -201,7 +237,9 @@ export default {
             onClick: () => window.open(this.getBlockExplorerBaseUrl+"/tx/"+tx.hash, '_blank').focus()
           });
           this.addDomainManually(fullDomainName);
-          this.checkEligibility();
+          this.isEligible = false;
+          this.chosenDomainName = null;
+          this.nftId = null;
 
           this.waiting = false;
         } else {
