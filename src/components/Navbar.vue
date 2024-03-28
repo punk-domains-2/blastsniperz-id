@@ -19,20 +19,19 @@
               tag="button" 
               v-if="isActivated" 
               to="/nft-free-domain" 
-              class="btn btn-primary navbar-menu-btn me-3"
+              class="btn btn-primary navbar-menu-btn ms-2"
             >
               Mint free domain
             </router-link>
 
-            <!--
+            <!-- Marketplace -->
             <a 
-              class="btn btn-primary mx-2 navbar-menu-btn" 
-              href="https://paintswap.finance/marketplace/fantom/collections/fantom-names" 
+              class="btn btn-primary ms-2 navbar-menu-btn" 
+              href="https://element.market/collections/blastsniperz-eb0299709?search%5Btoggles%5D[0]=BUY_NOW" 
               target="_blank"
             >Marketplace</a>
-            -->
 
-            <div v-if="isActivated" class="btn-group mx-2 navbar-menu-btn">
+            <div v-if="isActivated" class="btn-group ms-2 navbar-menu-btn">
               <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
                 {{getNetworkName}}
               </button>
@@ -48,7 +47,7 @@
               </ul>
             </div>
 
-            <div v-if="isActivated" class="btn-group mx-2 navbar-menu-btn">
+            <div v-if="isActivated" class="btn-group ms-2 navbar-menu-btn">
               <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-expanded="false">
                 {{ getNameOrAddress }}
               </button>
@@ -64,11 +63,20 @@
               </ul>
             </div>
 
-            <button v-if="!isActivated" class="btn btn-primary navbar-menu-btn" data-bs-toggle="modal" data-bs-target="#connectModal">Connect wallet</button>
+            <button v-if="!isActivated" class="btn btn-primary navbar-menu-btn ms-2" data-bs-toggle="modal" data-bs-target="#connectModal">Connect wallet</button>
 
-            <div v-if="isActivated" class="btn-group mx-2 navbar-menu-btn">
+            <!--
+            <div v-if="isActivated" class="btn-group ms-2 navbar-menu-btn">
               <router-link tag="button" class="btn btn-primary" to="/send-tokens">Send Tokens</router-link>
             </div>
+            -->
+
+            <!--
+            <a 
+              class="btn btn-primary ms-2 navbar-menu-btn" 
+              href="https://blastsniperz.io" 
+            >Homepage</a>
+            -->
           </div>
         </div>
 
@@ -152,6 +160,7 @@ export default {
     margin-top: 10px;
   }
   .navbar-menu-buttons {
+    margin-top: 20px;
     display: flex;
     flex-direction: column;
   }
